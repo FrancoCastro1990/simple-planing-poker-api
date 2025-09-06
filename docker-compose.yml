@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: planning-poker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: planning_poker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/infrastructure/database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d planning_poker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Planning Poker API
+  # api:
+  #   build: .
+  #   container_name: planning-poker-api
+  #   restart: unless-stopped
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     NODE_ENV: production
+  #     PORT: 3001
+  #     DATABASE_URL: postgresql://postgres:password@postgres:5432/planning_poker
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_NAME: planning_poker
+  #     DB_USER: postgres
+  #     DB_PASSWORD: password
+  #     FRONTEND_URL: http://localhost:5173
+  #   ports:
+  #     - "3001:3001"
+  #   healthcheck:
+  #     test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
+  # Redis (optional - for production scaling)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: planning-poker-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  # redis_data:
+
+networks:
+  default:
+    name: planning-poker-network
