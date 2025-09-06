@@ -41,11 +41,23 @@ export class RoomService implements IRoomService {
       throw new Error(ERROR_CODES.ROOM_NOT_FOUND);
     }
 
-    const user = new UserEntity(userData);
-    const success = room.addUser(user);
+    // Check if user already exists in room
+    let user = room.getUser(userData.id);
     
-    if (!success) {
-      throw new Error(ERROR_CODES.ROOM_FULL);
+    if (user) {
+      // User is rejoining (e.g., after page reload) - keep existing state
+      // Just update the name in case it changed
+      if (user.name !== userData.name) {
+        user.updateName(userData.name);
+      }
+    } else {
+      // New user joining
+      user = new UserEntity(userData);
+      const success = room.addUser(user);
+      
+      if (!success) {
+        throw new Error(ERROR_CODES.ROOM_FULL);
+      }
     }
 
     return { room, user };

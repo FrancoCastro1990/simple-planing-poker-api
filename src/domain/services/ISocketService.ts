@@ -10,4 +10,5 @@ export interface ISocketService {
   broadcastVoteCast(roomId: string, userId: string): void;
   broadcastVotesRevealed(roomId: string, stats: RoomStats): void;
   sendError(socketId: string, message: string, code: string): void;
+  isUserConnected?(roomId: string, userId: string): boolean;
 }

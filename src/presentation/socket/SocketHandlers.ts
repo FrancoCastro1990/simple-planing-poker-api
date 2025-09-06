@@ -190,15 +190,38 @@ export class SocketHandlers {
       const roomId = socket.data.roomId;
       const userId = socket.data.userId;
       
+      // Always unregister the socket immediately
+      const socketService = this.socketService as any;
+      if (socketService.unregisterSocket) {
+        socketService.unregisterSocket(socket.id);
+      }
+      
       if (roomId && userId) {
-        const room = await this.roomService.leaveRoom(roomId, userId);
+        // Don't immediately remove user from room - they might be reconnecting (page reload)
+        // Instead, mark them as disconnected and set a timeout to remove them if they don't reconnect
+        console.log(`User ${userId} disconnected from room ${roomId} - waiting for potential reconnection`);
         
-        if (room) {
-          this.socketService.broadcastRoomState(room);
-          this.socketService.broadcastUserLeft(roomId, userId);
-        }
-        
-        console.log(`User ${userId} disconnected from room ${roomId}`);
+        // Set a timeout to remove the user if they don't reconnect within 30 seconds
+        setTimeout(async () => {
+          try {
+            // Check if user has reconnected by checking if there's an active socket for this user
+            const isUserConnected = socketService.isUserConnected && socketService.isUserConnected(roomId, userId);
+            
+            if (!isUserConnected) {
+              console.log(`User ${userId} did not reconnect - removing from room ${roomId}`);
+              const room = await this.roomService.leaveRoom(roomId, userId);
+              
+              if (room) {
+                this.socketService.broadcastRoomState(room);
+                this.socketService.broadcastUserLeft(roomId, userId);
+              }
+            } else {
+              console.log(`User ${userId} successfully reconnected to room ${roomId}`);
+            }
+          } catch (error) {
+            console.error('Error in delayed user removal:', error);
+          }
+        }, 5000); // 5 seconds timeout - reasonable for page reloads
       }
       
       console.log(`Client disconnected: ${socket.id}`);

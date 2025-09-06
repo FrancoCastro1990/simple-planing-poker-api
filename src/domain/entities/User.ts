@@ -14,13 +14,21 @@ export interface CreateUserRequest {
 
 export class UserEntity {
   public readonly id: string;
-  public readonly name: string;
+  private _name: string;
   public hasVoted: boolean = false;
   public vote?: FibonacciCard;
 
   constructor(data: CreateUserRequest) {
     this.id = data.id;
-    this.name = data.name;
+    this._name = data.name;
+  }
+
+  get name(): string {
+    return this._name;
+  }
+
+  updateName(name: string): void {
+    this._name = name;
   }
 
   castVote(vote: FibonacciCard): void {
@@ -36,7 +44,7 @@ export class UserEntity {
   toJSON(): User {
     return {
       id: this.id,
-      name: this.name,
+      name: this._name,
       hasVoted: this.hasVoted,
       vote: this.vote,
     };

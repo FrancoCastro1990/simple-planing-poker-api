@@ -98,4 +98,19 @@ export class SocketService implements ISocketService {
     const userInfo = this.socketUserMap.get(socketId);
     return userInfo ? userInfo.userId : null;
   }
+
+  isUserConnected(roomId: string, userId: string): boolean {
+    const socketId = this.userSocketMap.get(userId);
+    if (!socketId) {
+      return false;
+    }
+    
+    const socket = this.io.sockets.sockets.get(socketId);
+    if (!socket || !socket.connected) {
+      return false;
+    }
+    
+    const userInfo = this.socketUserMap.get(socketId);
+    return userInfo ? userInfo.roomId === roomId : false;
+  }
 }
